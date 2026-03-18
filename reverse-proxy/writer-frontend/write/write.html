@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/write/write.css">
+  <title>撰寫天地</title>
+</head>
+
+<body>
+
+  <form action="/api/write" method="POST" enctype="multipart/form-data" id="form">
+    <label for="title">標題</label>
+    <input type="text" name="title" id="title">
+
+    <label for="photo">照片</label>
+    <input type="file" name="photo" id="photo" accept="image/*">
+
+    <img id="preview-image" src="" alt="預覽圖片">
+    <div>
+      <input type="radio" name="category" value="1" checked>政治</input>
+      <input type="radio" name="category" value="2">體育</input>
+      <input type="radio" name="category" value="3">財經</input>
+    </div>
+    <label for="content">新聞內容</label>
+    <textarea name="content" id="content" cols="100" rows="20"></textarea>
+
+    <input type="submit" value="submit" id="submit">
+
+  </form>
+
+  <script src="/write/write.js" defer></script>
+
+</body>
+
+</html>

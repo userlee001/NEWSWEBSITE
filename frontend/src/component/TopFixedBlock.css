@@ -1,0 +1,108 @@
+.top-fixed-bloock {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    height: 100px;
+}
+
+.logo-and-search {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    height: 50px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.logo-and-search > div {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    background-color: black;
+}
+
+.search-bar {
+    flex: 1;
+    max-width: 300px;
+    min-width: 100px;
+    height: 30px;
+    border: 0px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.search-bar:focus {
+    outline: none;
+}
+
+.search-icon-div {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    border: 1px gray solid;
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+    background-color: gray;
+    transition: opacity 0.3s;
+}
+
+.search-icon-div:hover {
+    opacity: 0.8;
+}
+
+.search-icon-div:active {
+    opacity: 0.5;
+}
+
+.search-icon-img {
+    position: absolute;
+    top: 6px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    
+}
+
+.chose-category {
+    position: absolute;
+    top: 50px;
+    left: 0px;
+    right: 0px;
+    height: 50px;
+    background-color: pink;
+    display: flex;
+    flex-direction: row;
+}
+
+.latest-news,.politics,.sport,.Finance {
+    flex: 1;
+    font-size: 20px;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+    transition: opacity 0.3s;
+}
+
+.latest-news:hover,
+.politics:hover,
+.sport:hover,
+.Finance:hover {
+    opacity: 0.8;
+}
+
+.latest-news:active,
+.politics:active,
+.sport:active,
+.Finance:active{
+    opacity: 0.6;
+}
+
+

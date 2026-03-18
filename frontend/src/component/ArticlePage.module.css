@@ -1,0 +1,61 @@
+.detailed-content {
+    margin-top: 120px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    height: calc(100vh - 100px);
+    overflow: auto;
+}
+
+.alignment-purpose-div {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    width: min(70%, 700px);
+    overflow: auto;
+}
+
+.title {
+    font-size: 40px;
+    white-space: normal;
+    word-break: break-word;
+    margin: 0;
+}
+
+.name-and-time{
+    display: flex;
+    flex-direction: row;
+    font-size: 20px;
+    gap: 30px;
+}
+
+.cover-image-div {
+    width: 90%;
+}
+
+.cover-image {
+    width: 100%;
+    max-height: 350px;
+}
+
+.divider1 {
+    width: 80%;
+    margin-top: 20px;
+    margin-bottom: 3px;
+    align-self: flex-start;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+.divider2{
+    width: 85%;
+    margin-bottom: 5px;
+    align-self: flex-start;
+    margin-left: 40px;
+    margin-right: 0px;
+}
+
+.content {
+    margin: 0px;
+    margin-top: 10px;
+    font-size: 30px;
+}

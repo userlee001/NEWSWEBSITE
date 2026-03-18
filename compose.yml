@@ -1,0 +1,55 @@
+services:
+  db:
+    build: ./database
+    image: my_custom_database:v1.0
+    container_name: news_database_container
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql  
+
+  base-backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/news_db
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - shared_images:/app/public/images
+    depends_on:
+      - db
+  backend1:
+    container_name: backend1
+    extends: base-backend
+    environment:
+      - number=1
+
+  backend2:
+    container_name: backend2
+    extends: base-backend
+    environment:
+      - number=2
+
+  backend3:
+    container_name: backend3
+    extends: base-backend
+    environment:
+      - number=3
+  
+  reverse-proxy:
+    build: ./reverse-proxy
+    image: reverse_proxy:v1.0
+    container_name: reverse_proxy
+    volumes:
+      - shared_images:/usr/share/nginx/html/images
+    ports:
+      - "5000:5000"
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+    
+volumes:
+  postgres_data:
+    name: database_postgres_data
+  shared_images:
+    name: shared_images
