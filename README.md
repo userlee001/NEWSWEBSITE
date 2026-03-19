@@ -70,3 +70,6 @@ docker compose up -d
 
 ## Changelog [version:1.0.1] 2026/03/19
 nginx能接收的request body大小上限增加為20M，避免正常上傳新聞時遇到**413 Request Entity Too Large**的錯誤訊息。
+
+## Changelog [version:1.0.2] 2026/03/20
+針對**NewsList component** 內部 **title-and-time** 的 class 做 css 樣式修正，解決標題太長時格式錯誤的問題。
