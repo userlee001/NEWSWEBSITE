@@ -1,0 +1,107 @@
+body {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    right: 0px;
+}
+
+#root {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.alignment-purpose {
+    width: min(70%, 500px);
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding-top: 30px;
+}
+
+
+.news-card {
+    width: 399px;
+    height: 100px;
+    display: flex;
+    flex-direction: row;
+    color: white;
+    background-color: rgb(42, 39, 39);
+    border-radius: 5px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.news-card:hover .trashcan-button {
+    background-color: rgba(128, 128, 128, 0.3);
+}
+
+.news-card:active .trashcan-button {
+    background-color: rgba(128, 128, 128, 0.7);
+}
+
+.news-card:hover .trashcan-img {
+    opacity: 1;
+}
+
+.news-card:active .trashcan-img {
+    opacity: 0.8;
+}
+
+.news-card>.cover-img-div {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.news-card>.cover-img-div>.cover-img {
+    width: 133px;
+    height: 100px;
+    border-radius: 5px;
+}
+
+.news-card>.title-and-time {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+}
+
+.news-card>.title-and-time>.title {
+    font-size: 25px;
+    white-space: normal;
+    word-break: break-word;
+    margin: 0;
+    padding: 4px;
+}
+
+.news-card>.title-and-time>.time {
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+    margin: 0;
+    padding: 4px;
+}
+
+.trashcan-button {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    bottom: 0px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.trashcan-img {
+    height: 100px;
+    opacity: 0;
+    pointer-events:none
+}

@@ -1,0 +1,32 @@
+body {
+    display: flex;
+    justify-content: center;
+}
+
+#form {
+   display: flex;
+   flex-direction: column;
+   padding-top: 30px;
+}
+
+#title {
+    margin-bottom: 10px;
+}
+
+#preview-image {
+    max-width: 300px;
+    display: block;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+#content {
+    margin-bottom: 10px;
+}
+
+#submit {
+    width: 100px;
+    display: inline-block;
+    align-self: center;
+    
+}
