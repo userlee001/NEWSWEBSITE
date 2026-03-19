@@ -31,7 +31,7 @@
     - 使用 **Docker Shared Volume** 實現 Nginx 與後端容器間的圖片資源共享。
 
 ### 3. 前端架構設計 (Frontend Design)
-- **讀者端 (Reader UI)**: 使用 **React.js** 構建，強調組件化開發與良好的使用者互動體驗。
+- **讀者端 (Reader UI)**: 使用 **React.js** 構建，強調組件化開發與良好的使用者互動體驗，可以透過/login路徑登入帳號，透過/write路徑寫文章並提交。
 - **寫手端 (Writer UI)**: 採用原生 HTML/CSS/JS 輕量化實作，專注於文章編輯與管理功能。
 
 ### 4. RESTful API 設計 (Backend API)
@@ -66,3 +66,7 @@ docker compose up -d
 * **`online` Branch (生產環境)**: 
     * 用於 GCP VM 的實際部署，僅剩佈署所需的檔案，冗餘檔案會刪除。
     * **Nginx 配置**: 包含 `reports.baby` 網域處理、CSR 換發之 CRT/CA Bundle 憑證掛載，並開啟 80 、 443 埠口提供加密傳輸服務。
+
+
+## Changelog [version:1.0.1] 2026/03/19
+nginx能接收的request body大小上限增加為20M，避免正常上傳新聞時遇到**413 Request Entity Too Large**的錯誤訊息。
