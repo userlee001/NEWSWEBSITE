@@ -16,13 +16,25 @@ const toolbarOptions = [
 
 export function ContentEditor({ onContentChange, onImageFileChange, initialSetting }) {
     const containerRef = useRef(null);
-    // 💡 新增：專門用來包裝 Quill 的 Ref
     const quillWrapperRef = useRef(null);
     const quillRef = useRef(null);
     const addImageInputRef = useRef(null);
     
-    // 加入防呆處理，避免 initialSetting 屬性不存在時報錯
-    const [preview, setPreview] = useState(initialSetting?.imageFile || null);
+    const [preview, setPreview] = useState(() => {
+        if (!initialSetting?.imageFile) {
+            return null;
+        }
+
+        if (initialSetting.imageFile instanceof File) {
+            return URL.createObjectURL(initialSetting.imageFile);
+        }
+
+        if (typeof initialSetting.imageFile === 'string') {
+            return initialSetting.imageFile;
+        }
+
+        return null;
+    });
 
     useEffect(() => {
         const wrapper = quillWrapperRef.current;

@@ -8,7 +8,7 @@ export function UpdateNews() {
     const { newsid: newsId } = useParams();
     const [blockList, setBlockList] = useState([]);
     const [mainTitle, setMainTitle] = useState({ content: "", category: "1", imageFile: null });
-
+    const [isLoading, setIsLoading] = useState(true);
     useEffect(() => {
         (async () => {
             const response = await fetch(`/api/writer/newscontent/${newsId}`);
@@ -37,6 +37,7 @@ export function UpdateNews() {
                 })
             );
             setBlockList(contentBlockList);
+            setIsLoading(false);
         })()
     }, [newsId]);
 
@@ -100,6 +101,10 @@ export function UpdateNews() {
         })
             .then((response) => { return response.json(); })
             .then(({ message }) => { return console.log(message); });
+    }
+
+    if (isLoading) {
+        return <div>資料載入中...</div>; 
     }
 
     return (

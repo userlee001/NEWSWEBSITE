@@ -1,11 +1,12 @@
 import style from "./ListNews.module.css";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function ListNews() {
     const [pageNumber, setPageNumber] = useState(0);
     const [pageNumberInputValue, setPageNumberInputValue] = useState(0);
     const [newsList, setNewsList] = useState([]);
-
+    const navigate = useNavigate();
     useEffect(() => {
         console.log(pageNumber);
         (async () => {
@@ -47,11 +48,15 @@ export function ListNews() {
         }
     }
 
+    const handleNewsClicked = (newsId) => {
+        navigate(`/update/${newsId}`);
+    }
+
     return (
         <div className={style["list-news-wrapper"]}>
             {newsList.map((news) => {
                 return (
-                    <div className={style["news"]} key={news["id"]}>
+                    <div className={style["news"]} key={news["id"]} onClick={() => handleNewsClicked(news["id"])}>
                         <div className={style["news-cover-image-wrapper"]}>
                             <img src={`/images/${news["cover_image_path"]}`} alt="no-cover" className={style["news-cover-image"]} />
                         </div>

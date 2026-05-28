@@ -16,13 +16,26 @@ const toolbarOptions = [
 
 export function MainTitleEditor({ onContentChange, onImageFileChange, onCategoryChange, initialSetting }) {
     const containerRef = useRef(null);
-    // 💡 新增：專門用來包裝 Quill 的 Ref
-    const quillWrapperRef = useRef(null); 
+    const quillWrapperRef = useRef(null);
     const quillRef = useRef(null);
     const addImageInputRef = useRef(null);
-    
-    // 加入預設值的防呆處理
-    const [preview, setPreview] = useState(initialSetting?.imageFile || null);
+
+    const [preview, setPreview] = useState(() => {
+        if (!initialSetting?.imageFile) {
+            return null;
+        }
+
+        if (initialSetting.imageFile instanceof File) {
+            return URL.createObjectURL(initialSetting.imageFile);
+        }
+
+        if (typeof initialSetting.imageFile === 'string') {
+            return initialSetting.imageFile;
+        }
+
+        return null;
+    });
+
     const [category, setCategory] = useState(initialSetting?.category || "");
 
     useEffect(() => {
@@ -32,7 +45,7 @@ export function MainTitleEditor({ onContentChange, onImageFileChange, onCategory
         // 建立一個 div 讓 Quill 掛載
         const editorContainer = wrapper.ownerDocument.createElement('div');
         wrapper.appendChild(editorContainer);
-        
+
         const quill = new Quill(editorContainer, {
             theme: "snow",
             modules: {
@@ -45,10 +58,10 @@ export function MainTitleEditor({ onContentChange, onImageFileChange, onCategory
         if (initialSetting?.content) {
             quill.clipboard.dangerouslyPasteHTML(initialSetting.content);
         }
-        
+
         setupCustomSizeInput(quill, SizeStyle);
         quillRef.current = quill;
-        
+
         quill.on('text-change', () => {
             onContentChange(quill.root.innerHTML);
         });
@@ -116,7 +129,7 @@ export function MainTitleEditor({ onContentChange, onImageFileChange, onCategory
                     </div>
                 </div>
             </div>
-            
+
             {/* 💡 修正：用一個獨立的 div 作為 Quill 的外掛載點 */}
             <div ref={quillWrapperRef} className={style["quill-container"]}></div>
         </div>
