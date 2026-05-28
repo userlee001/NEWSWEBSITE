@@ -8,7 +8,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql  
 
-  base-backend:
+  backend:
     build: ./backend
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/news_db
@@ -17,23 +17,8 @@ services:
       - shared_images:/app/public/images
     depends_on:
       - db
-  backend1:
-    container_name: backend1
-    extends: base-backend
-    environment:
-      - number=1
-
-  backend2:
-    container_name: backend2
-    extends: base-backend
-    environment:
-      - number=2
-
-  backend3:
-    container_name: backend3
-    extends: base-backend
-    environment:
-      - number=3
+    deploy:
+      replicas: 3
   
   reverse-proxy:
     build: ./reverse-proxy
@@ -44,9 +29,7 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - backend1
-      - backend2
-      - backend3
+      - backend
     
 volumes:
   postgres_data:

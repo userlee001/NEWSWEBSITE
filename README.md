@@ -1,75 +1,127 @@
-# NESWEBSITE - 高可用性新聞發佈系統 
+# News App — Docker Compose 部署說明
 
-### 專案背景
-聽完趨勢科技的徵才說明會之後，想要爭取 **趨勢科技 (Trend Micro) 暑期實習生** 職位，花了一周從0開始建構這個專案。目標是建立一個具備負載平衡、容器化部署與安全驗證的新聞平台。
-
----
-
-## 系統架構圖 (System Architecture)
-
-本系統部署於 **Google Cloud Platform (GCP)** 上的 VM，採用 **微服務容器化** 架構，共運行 5 個 Docker 容器：
-
-- **1 * NGINX**: 作為 Reverse Proxy 與負載平衡器，同時負責靜態資源處理。
-- **3 * ExpressJS**: 後端 API Server 集群，負責業務邏輯處理。
-- **1 * PostgreSQL**: 關係型資料庫，儲存新聞與使用者資料。
+本專案使用 Docker Compose 管理三個服務：PostgreSQL 資料庫、Node.js 後端（水平擴展），以及 Nginx 反向代理。
 
 ---
 
-## 🛠 技術亮點與實作細節
+## 專案架構
 
-### 1. 網路安全與網域管理 (Networking & Security)
-- **SSL/TLS 佈署**: 透過 NameCheap 購買網域 `reports.baby`，手動產生 **CSR (Certificate Signing Request)** 並配置 **CRT/CA Bundle**，在 Nginx 層實現 HTTPS 加密傳輸。
-- **身分驗證 (Auth)**: 
-    - 實作 **JWT (JSON Web Token)** 驗證機制。
-    - 登入後將 Token 儲存於瀏覽器 **Cookie** 中，並在敏感操作透過 authMiddleware 進行合法性校驗。
-- **防範資安漏洞**: 在 `DELETE` 接口中強制檢查「新聞 ID + 作者 ID」，有效防止 **IDOR (不安全直接物件參照)** 攻擊。
-
-### 2. 負載平衡與效能優化 (Load Balancing & Optimization)
-- **流量分流**: 使用 Nginx 的 **Round Robin** 演算法將 API 請求均勻分配至三個後端實例，實現初步的水平擴展（Horizontal Scaling）。
-- **靜態資源加速**: 
-    - 前端 React 建置檔與新聞圖片直接由 Nginx 處理，不經過後端 Express，降低延遲並減輕後端 I/O 負擔。
-    - 使用 **Docker Shared Volume** 實現 Nginx 與後端容器間的圖片資源共享。
-
-### 3. 前端架構設計 (Frontend Design)
-- **讀者端 (Reader UI)**: 使用 **React.js** 構建，強調組件化開發與良好的使用者互動體驗，可以透過/login路徑登入帳號，透過/write路徑寫文章並提交。
-- **寫手端 (Writer UI)**: 採用原生 HTML/CSS/JS 輕量化實作，專注於文章編輯與管理功能。
-
-### 4. RESTful API 設計 (Backend API)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/login` | 寫手登入並核發 JWT，將JWT存在使用者瀏覽器的cookie。 |
-| `POST` | `/api/write` | 新聞提交（包含 JWT 驗證與圖片上傳處理）。 |
-| `GET` | `/api/newslist/:category/:page` | 分類分頁抓取新聞（category:0代表不分類、1代表政治、2代表體育、3代表財經）。 |
-| `GET` | `/api/search/:page` | 標題關鍵字模糊搜尋。 |
-| `GET` | `/api/writer/listarticle` | 獲取該寫手名下所有文章（權限校驗）。 |
-| `DELETE` | `/api/writer/delete/:newsid` | 安全刪除新聞（驗證作者 ID 匹配）。 |
-
----
-
-## 部署說明 (Deployment)
-
-本專案完全容器化，確保開發環境與生產環境一致。  
-要有.env檔案，內容請參考.env.example
-```bash
-# 啟動所有服務 (Nginx *1, Backend *3, DB *1)
-docker compose up -d
+```
+.
+├── docker-compose.yml
+├── database/          # 自訂 PostgreSQL Dockerfile
+├── backend/           # 後端應用程式
+└── reverse-proxy/     # Nginx 反向代理設定
 ```
 
-## 分支與環境管理 (Branching & Environments)
+### 服務說明
 
+| 服務 | Image | 說明 |
+|------|-------|------|
+| `db` | `my_custom_database:v1.0` | 自訂 PostgreSQL 資料庫 |
+| `backend` | （由 `./backend` 建置） | 後端 API，預設啟動 3 個 replica |
+| `reverse-proxy` | `reverse_proxy:v1.0` | Nginx 反向代理，對外開放 port 5000 |
 
-專案採用分支管理來隔離開發與生產環境的配置差異：
+### Volume 說明
 
-* **`master` Branch (開發環境)**: 
-    * 預設為本地端或測試環境使用，會有開發的完整檔案。
-    * **Nginx 配置**: 僅作為 Reverse Proxy 處理內部容器轉發，並開啟 5000 埠口，**未包含** 網域、SSL/TLS 憑證與 HTTPS 強制跳轉邏輯。
-* **`online` Branch (生產環境)**: 
-    * 用於 GCP VM 的實際部署，僅剩佈署所需的檔案，冗餘檔案會刪除。
-    * **Nginx 配置**: 包含 `reports.baby` 網域處理、CSR 換發之 CRT/CA Bundle 憑證掛載，並開啟 80 、 443 埠口提供加密傳輸服務。
+| Volume | 名稱 | 用途 |
+|--------|------|------|
+| `postgres_data` | `database_postgres_data` | 資料庫持久化儲存 |
+| `shared_images` | `shared_images` | 後端與反向代理共用的圖片目錄 |
 
+---
 
-## Changelog [version:1.0.1] 2026/03/19
-nginx能接收的request body大小上限增加為20M，避免正常上傳新聞時遇到**413 Request Entity Too Large**的錯誤訊息。
+## 環境變數設定
 
-## Changelog [version:1.0.2] 2026/03/20
-針對**NewsList component** 內部 **title-and-time** 的 class 做 css 樣式修正，解決標題太長時格式錯誤的問題。
+在專案根目錄建立 `.env` 檔案，並填入以下變數：
+
+```env
+POSTGRES_PASSWORD=your_postgres_password
+JWT_SECRET=your_jwt_secret
+```
+
+> ⚠️ 請勿將 `.env` 提交至版本控制系統，務必加入 `.gitignore`。
+
+---
+
+## 快速開始
+
+### 前置需求
+
+- [Docker](https://docs.docker.com/get-docker/) >= 20.10
+- [Docker Compose](https://docs.docker.com/compose/) >= 2.0
+
+### 啟動服務
+
+```bash
+# 建置所有 image 並在背景啟動
+docker compose up -d --build
+
+# 查看各服務狀態
+docker compose ps
+
+# 查看即時 log
+docker compose logs -f
+```
+
+### 停止服務
+
+```bash
+# 停止所有服務（保留 volume）
+docker compose down
+
+# 停止並移除所有 volume（資料將清空）
+docker compose down -v
+```
+
+---
+
+## 服務細節
+
+### db（資料庫）
+
+- 基於 `./database` 目錄的自訂 Dockerfile 建置
+- 資料存放於 `database_postgres_data` volume，容器重啟後資料不會流失
+- 資料庫連線資訊：
+  - Host（容器內部）：`db`
+  - Port：`5432`
+  - User：`postgres`
+  - Database：`news_db`
+
+### backend（後端）
+
+- 預設以 **3 個 replica** 運行，由反向代理進行負載平衡
+- 透過 `depends_on` 確保資料庫啟動後才啟動
+- 圖片檔案存放於 `shared_images` volume（路徑：`/app/public/images`）
+
+### reverse-proxy（反向代理）
+
+- 對外開放 **port 5000**，可透過 `http://localhost:5000` 存取
+- 將請求轉發至後端的 3 個 replica
+- 同步掛載 `shared_images` volume 以直接提供靜態圖片（路徑：`/usr/share/nginx/html/images`）
+
+---
+
+## 常用指令
+
+```bash
+# 重新建置特定服務的 image
+docker compose build backend
+
+# 查看特定服務的 log
+docker compose logs -f backend
+
+# 進入資料庫容器
+docker exec -it news_database_container psql -U postgres -d news_db
+
+# 手動調整 backend replica 數量
+docker compose up -d --scale backend=5
+```
+
+---
+
+## 注意事項
+
+- `backend` 服務因使用 `replicas: 3`，**不可設定固定的 `container_name`**，否則會衝突
+- 修改 `.env` 後需重新啟動服務才會生效（`docker compose up -d`）
+- `shared_images` volume 由 `backend` 寫入、由 `reverse-proxy` 讀取，請確保 Nginx 設定有對應的靜態檔案路由

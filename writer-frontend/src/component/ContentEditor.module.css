@@ -1,0 +1,77 @@
+.editor-wrapper {
+    width: 50%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+
+.editor-wrapper :global(.ql-picker.ql-size .ql-picker-label::before) {
+    content: attr(data-value) !important;
+}
+
+.editor-wrapper :global(.ql-picker.ql-size .ql-picker-item::before) {
+    content: attr(data-value) !important;
+}
+
+.editorWrapper :global(.ql-picker.ql-size .ql-picker-label:not([data-value])::before),
+.editorWrapper :global(.ql-picker.ql-size .ql-picker-item:not([data-value])::before) {
+  content: '16px' !important;
+}
+
+.editor-wrapper :global(.ql-custom-size-input) {
+    width: var(--target-width, 58px) !important;
+    height: var(--target-height, 24px) !important;
+    margin-left: 5px;
+}
+
+.main-title {
+    margin-top: 20px;
+}
+
+.preview-image-wrapper {
+    display: flex;
+    flex-direction: row;
+}
+
+.preview-image {
+    border-top:0.5px dashed gray;
+    border-left:0.5px dashed;
+    width: 50%;
+}
+
+.add-and-delete-image-wrapper {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    flex-wrap: wrap;
+}
+
+/* =========================================
+   Quill 佈局修復 (解決超出/不撐開父容器的問題)
+   ========================================= */
+
+/* 解決寬度撐爆：讓 Toolbar 的按鈕空間不夠時可以自動換行 */
+.editor-wrapper :global(.ql-toolbar.ql-snow) {
+    white-space: normal;
+    display: flex;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+}
+
+/* 解決高度不撐開父容器：覆寫 Quill 預設的高度行為 */
+.editor-wrapper :global(.ql-container.ql-snow) {
+    height: auto !important; /* 強制高度設為 auto，讓內容撐開它 */
+    min-height: 50px; /* 你可以依照需求調整編輯器的最小高度 */
+    box-sizing: border-box;
+}
+
+/* 讓實際輸入文字的區塊也能跟著撐開 */
+.editor-wrapper :global(.ql-editor) {
+    min-height: 50px;
+    height: auto;
+    overflow-y: hidden; /* 隱藏內部捲軸，讓文字增加時直接往下長，撐開最外層 */
+}
