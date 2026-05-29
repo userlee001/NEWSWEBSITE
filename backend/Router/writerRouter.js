@@ -9,13 +9,15 @@ import {
     updateNews,
     deleteNews
 } from "../Controller/writerController.js";
-import { 
-    writeNewsErrorHandler, 
+import {
+    writeNewsErrorHandler,
     listNewsErrorHandler,
     getContentOfNewsErrorHandler,
-    updateNewsErrorHandler ,
+    updateNewsErrorHandler,
     deleteNewsErrorHandler
-} from "../ErrorHandler/writerErrorHandler.js"
+} from "../ErrorHandler/writerErrorHandler.js";
+import { recordActionTypeMiddleware } from "../Utilities/recordActionType.js";
+
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -31,10 +33,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.post("/write", authMiddleware, upload.any(), writeNews, writeNewsErrorHandler);
-router.delete("/delete/news/:newsid", authMiddleware, deleteNews, deleteNewsErrorHandler);
+router.post("/write", recordActionTypeMiddleware("Write News."), authMiddleware, upload.any(), writeNews, writeNewsErrorHandler);
+router.delete("/delete/news/:newsid", recordActionTypeMiddleware("Delete News"), authMiddleware, deleteNews, deleteNewsErrorHandler);
 router.get("/listnews", authMiddleware, listNews, listNewsErrorHandler);
 router.get("/newscontent/:newsid", authMiddleware, getContentOfNews, getContentOfNewsErrorHandler);
-router.patch("/update/news/:newsid", authMiddleware, upload.any(), updateNews, updateNewsErrorHandler);
+router.patch("/update/news/:newsid", recordActionTypeMiddleware("UpdateNews"), authMiddleware, upload.any(), updateNews, updateNewsErrorHandler);
 
 export default router;

@@ -5,7 +5,7 @@ export const loginErrorHandler = (error, request, response, next) => {
         "密碼錯誤"
     ];
     if (clientErrorMessages.includes(error.message)) {
-        return response.status(400).json({ message: fail });
+        return response.status(400).json({ message: "fail" });
     }
     return response.status(500).json({ message: "伺服器出錯" });
 }
@@ -17,7 +17,7 @@ export const registerErrorHandler = (error, request, response, next) => {
         "密碼太短"
     ];
     if (clientErrorMessages.includes(error.message)) {
-        return response.status(400).json({ message: fail });
+        return response.status(400).json({ message: "fail" });
     }
     return response.status(500).json({ message: "伺服器出錯" });
 }

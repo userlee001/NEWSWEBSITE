@@ -1,4 +1,4 @@
-import { pool } from "../Database/pool.js";
+import { pool } from "../Utilities/pool.js";
 import { handleDeletePreStoredImage } from "../Utilities/deletePreStoredImage.js"
 import fs from "fs";
 
@@ -36,8 +36,11 @@ export const writeNews = async (request, response, next) => {
             default:
                 throw new Error("無效的分類代碼");
         }
+
         client = await pool.connect();
+
         await client.query('BEGIN');
+
         const insert_news_metadata_result = await client.query(
             `
                 INSERT INTO news_metadata (title, author_id, category, cover_image_path) 
@@ -46,14 +49,23 @@ export const writeNews = async (request, response, next) => {
             `,
             [mainTitleText, author_id, category, cover_image_path]
         );
+
         let news_id = insert_news_metadata_result.rows[0].id;
+
         if (!news_id) {
             throw new Error("沒有新聞id");
         }
+
+        response.locals.audit.target = [{ table: "news_metadata", id: news_id }];
+
         let passage_number = 1;
+
         for (const block of blocksInformation) {
+
             const passage_image_path = (request.files.find((item) => { return item.fieldname === `image_${block.id}` }))?.filename || null;
+
             const content = block.content;
+
             const insert_passage_content_result = await client.query(
                 `
                 INSERT INTO passage_content (content_image_path, content, number, news_id) 
@@ -62,13 +74,19 @@ export const writeNews = async (request, response, next) => {
                 `,
                 [passage_image_path, content, passage_number, news_id]
             );
+
+            response.locals.audit.target.push({ table: "passage_content", id: insert_passage_content_result.rows[0].id });
+
             passage_number += 1;
         }
+
         await client.query('COMMIT');
+
         return response.status(200).json({ message: "上傳成功" });
     } catch (err) {
         if (client) {
             await client.query('ROLLBACK');
+            response.locals.audit.target = [];
         }
         next(err);
     } finally {
@@ -165,30 +183,43 @@ export const updateNews = async (request, response, next) => {
     let client;
     try {
         const authorId = request.jwtToken?.id;
+
         if (!authorId) {
             throw new Error("沒有作者帳號");
         }
+
         const { newsid: newsId } = request.params;
+
         if (!newsId) {
             throw new Error("找不到新聞id");
         }
+
         const mainTitleText = request.body.mainTitleText;
+
         if (!mainTitleText) {
             throw new Error("沒有標題");
         }
+
         const blocksInformation = JSON.parse(request.body.blocksInformation || "[]");
+
         if (!blocksInformation || blocksInformation.length === 0) {
             throw new Error("沒有內文")
         }
+
         const coverImage = (request.files.find((item) => { return item.fieldname === "mainTitleImageFile" }));
+
         if (!coverImage) {
             throw new Error("沒有封面照片");
         }
+
         const coverImagePath = coverImage.filename;
+
         if (!coverImagePath) {
             throw new Error("沒有封面照片路徑");
         }
+
         let category = request.body.category;
+
         switch (category) {
             case "1":
                 category = "politics";
@@ -202,8 +233,11 @@ export const updateNews = async (request, response, next) => {
             default:
                 throw new Error("無效的分類代碼");
         }
+
         client = await pool.connect();
+
         await client.query('BEGIN');
+
         let oldCoverImagePath = await client.query(
             `
                 SELECT cover_image_path
@@ -211,11 +245,15 @@ export const updateNews = async (request, response, next) => {
                 WHERE author_id = $1 AND id = $2 
                 FOR UPDATE
             `
-            , [authorId, newsId]);
+            , [authorId, newsId]
+        );
+
         if (oldCoverImagePath.rowCount === 0 || !oldCoverImagePath.rows[0]["cover_image_path"]) {
             throw new Error("找不到舊版的封面照片");
         }
+
         oldCoverImagePath = oldCoverImagePath.rows[0]["cover_image_path"];
+
         const updateNewsMetadataResult = await client.query(
             `
                 UPDATE news_metadata 
@@ -225,10 +263,14 @@ export const updateNews = async (request, response, next) => {
             `,
             [authorId, newsId, mainTitleText, category, coverImagePath]
         );
+
         if (updateNewsMetadataResult.rowCount === 0) {
             throw new Error("無可以被更新的資料");
         }
-        let deletePassageContentResult = await client.query(
+
+        response.locals.audit.target = [{ table: "news_metadata", id: newsId }];
+
+        const deletePassageContentResult = await client.query(
             `
                 DELETE 
                 FROM passage_content
@@ -237,18 +279,29 @@ export const updateNews = async (request, response, next) => {
             `
             ,
             [newsId]
-        )
+        );
+
         if (deletePassageContentResult.rowCount === 0) {
-            throw new Error("無可刪除的新聞內容")
+            throw new Error("無可刪除的新聞內容");
         }
+
+        for (let i = 0; i < deletePassageContentResult.rowCount; i++) {
+            response.locals.audit.target.push({ table: "passage_content", id: deletePassageContentResult.rows[i].id });
+        }
+
         let oldContentImagePath = deletePassageContentResult.rows.map((element) => {
             return element["content_image_path"];
         });
+
         let passageNumber = 1;
+
         for (const block of blocksInformation) {
+
             const passage_image_path = (request.files.find((item) => { return item.fieldname === `image_${block.id}` }))?.filename || null;
+            
             const content = block.content;
-            const insert_passage_content_result = await client.query(
+            
+            const insertPassageContentResult = await client.query(
                 `
                 INSERT INTO passage_content (content_image_path, content, number, news_id) 
                 VALUES ($1, $2, $3, $4) 
@@ -256,9 +309,14 @@ export const updateNews = async (request, response, next) => {
                 `,
                 [passage_image_path, content, passageNumber, newsId]
             );
+
+            response.locals.audit.target.push({ table: "passage_content", id: insertPassageContentResult.rows[0].id })
+            
             passageNumber += 1;
         }
+
         await client.query('COMMIT');
+
         try {
             handleDeletePreStoredImage([...oldContentImagePath, oldCoverImagePath].filter(Boolean));
         } catch (err) {
@@ -268,6 +326,8 @@ export const updateNews = async (request, response, next) => {
     } catch (err) {
         if (client) {
             await client.query('ROLLBACK');
+
+            response.locals.audit.target = [];
         }
         next(err);
     } finally {
@@ -321,6 +381,13 @@ export const deleteNews = async (request, response, next) => {
             return element["content_image_path"];
         });
         await client.query("COMMIT");
+
+        response.locals.audit.target = [{ table: "news_metadata", id: newsId }];
+
+        for (let i = 0; i < deletePassageContentResult.rowCount; i++) {
+            response.locals.audit.target.push({ table: "passage_content", id: deletePassageContentResult.rows[i].id })
+        }
+
         try {
             handleDeletePreStoredImage([...oldContentImagePath, oldCoverImagePath].filter(Boolean));
         } catch (err) {

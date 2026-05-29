@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { pool } from "../Database/pool.js";
+import { pool } from "../Utilities/pool.js";
 
 export const login = async (request, response, next) => {
     console.log(request.body);
@@ -31,6 +31,8 @@ export const login = async (request, response, next) => {
             role: writer.role
         }
 
+        request.jwtToken = payload;
+
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
             algorithm: "HS256",
             expiresIn: "1d"
@@ -44,6 +46,8 @@ export const login = async (request, response, next) => {
             maxAge: 24 * 60 * 60 * 1000
         })
 
+        response.locals.audit.target = [{ table: "writer", id: writer.id }];
+        
         return response.json({
             writer: { name: writer.name, role: writer.role },
             message: "success"
@@ -77,7 +81,7 @@ export const register = async (request, response, next) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const insert_username_hashedPassword_result = await pool.query(
+        const insertUsernameHashedPasswordResult = await pool.query(
             `
                 INSERT INTO writer (authorname, password)
                 VALUES ($1, $2)
@@ -85,9 +89,20 @@ export const register = async (request, response, next) => {
             [username, hashedPassword]
         );
 
+        const writer = insertUsernameHashedPasswordResult.rows[0];
+
+        const payload = {
+            id: writer.id,
+            role: writer.role
+        }
+
+        request.jwtToken = payload;
+
+        response.locals.audit.target = [{ table: "writer", id: writer.id }];
+
         return response.status(200).json({ message: "success" });
 
     } catch (err) {
         return next(err);
-    } 
+    }
 }

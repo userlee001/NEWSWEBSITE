@@ -3,11 +3,15 @@ import cookieParser from "cookie-parser";
 import authenticationRouter from "./Router/authenticationRouter.js";
 import readerRouter from "./Router/readerRouter.js";
 import writerRouter from "./Router/writerRouter.js";
+import { auditLogMiddleware } from "./Utilities/auditLogMiddleware.js";
+
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(auditLogMiddleware());
 
 app.use("/api/authentication", authenticationRouter);
 app.use("/api/reader", readerRouter);

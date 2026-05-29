@@ -6,9 +6,7 @@ export const authMiddleware = (request, response, next) => {
         if (!token) {
             return response.status(401).json({ "message": "no token" });
         }
-        console.log(token);
         request.jwtToken = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("a writer login.");
         next();
     } catch (err) {
         console.log(err);

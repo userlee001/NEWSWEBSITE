@@ -1,4 +1,4 @@
-import { pool } from "../Database/pool.js";
+import { pool } from "../Utilities/pool.js";
 
 export const getNewsList = async (request, response, next) => {
     let client;
