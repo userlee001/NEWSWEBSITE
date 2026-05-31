@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.0] - 2026-06-01 
+
+### Added
+- **Administrator Panel**: Introduced the `administrator-panel` frontend, providing administrators with a visual graphical user interface (GUI) for more intuitive and convenient system management.
+
 ## [2.1.0] - 2026-05-29
 
 ### Added

@@ -2,7 +2,7 @@
     margin-top: 110px;
     margin-bottom: 30px;
     width: 100%;
-    height: 100%;
+    height: calc(100vh - 140px);
     display: flex;
     flex-direction: column;
     align-items: center;

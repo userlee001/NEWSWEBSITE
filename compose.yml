@@ -21,7 +21,9 @@ services:
       replicas: 3
   
   reverse-proxy:
-    build: ./reverse-proxy
+    build:
+      context: .
+      dockerfile: reverse-proxy/Dockerfile
     image: reverse_proxy:v1.0
     container_name: reverse_proxy
     volumes:

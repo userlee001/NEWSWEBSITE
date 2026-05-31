@@ -1,145 +1,80 @@
-# Writer Frontend
+# Writer Frontend 專案說明文件
 
-新聞寫作後台系統的前端專案，提供記者與編輯進行新聞撰寫、更新與管理的操作介面。
+## 專案概述
 
----
+本專案為新聞網站微服務架構中的「作者端後台」模組 (B2B / CMS)。專為記者與專欄作家設計，提供完整的內容管理系統功能，包含身份驗證、新聞列表分頁檢視、多段落圖文編輯器，以及針對現有新聞的修改與刪除功能。本專案以 React 構建，並深度整合 FormData API 處理複雜的多媒體檔案上傳。
 
-## 專案結構
+## 技術架構
 
-```
-src/
-│ App.jsx                  # 根元件，定義所有路由
-│ App.module.css
-│ main.css
-│ main.jsx                 # 應用程式進入點
-│
-├─ assets/                 # 靜態資源
-│   login-background.jpg
-│   monkey-close-eye.svg
-│   monkey-open-eye.svg
-│   testimg1.png
-│
-├─ component/              # 可重用元件
-│   ContentEditor.jsx      # 文章段落編輯器（含 Quill 富文本 + 圖片上傳）
-│   ContentEditor.module.css
-│   MainTitleEditor.jsx    # 主標題編輯器（含封面圖片 + 分類標籤）
-│   MainTitleEditor.module.css
-│
-└─ page/                   # 頁面元件
-    ListNews.jsx            # 新聞列表頁（含翻頁功能）
-    ListNews.module.css
-    LoginWriter.jsx         # 登入頁
-    LoginWriter.module.css
-    RegisterWriter.jsx      # 註冊頁
-    RegisterWriter.module.css
-    UpdateNews.jsx          # 新聞更新頁
-    UpdateNews.module.css
-    WriteNews.jsx           # 新聞撰寫頁
-    WriteNews.module.css
-```
+* 核心框架：React.js
+* 建置工具：Vite
+* 進階編譯：配置 `@rolldown/plugin-babel` 並啟用 React Compiler (`reactCompilerPreset`)，以達到自動最佳化渲染效能的目的。
+* 路由管理：React Router v6 (react-router-dom)
+* 樣式管理：CSS Modules (例如 `UpdateNews.module.css`)，確保樣式隔離。
+* 視覺特效：jQuery 搭配 `jquery.ripples` 實作登入與註冊頁面的水波紋互動背景。
+* 網路請求：原生 Fetch API 搭配 FormData 處理圖文混排表單。
 
----
+## 核心機制與技術亮點
 
-## 路由結構
+### 1. 動態圖文編輯器狀態管理 (WriteNews)
+在撰寫新聞頁面中，文章結構被拆分為「主標題區塊」與「動態段落區塊」。
+* **主標題狀態 (`mainTitle`)**：包含 `content` (標題文字)、`category` (分類代碼)、`imageFile` (封面圖片檔案)。
+* **段落陣列狀態 (`blockList`)**：這是一個陣列，允許使用者透過「加一段」或「減一段」動態調整長度。每個段落皆會透過 `crypto.randomUUID()` 賦予唯一的 ID，並包含獨立的 `content` 與 `imageFile` 狀態。
+* **FormData 封裝上傳**：發布時，系統會將純文字資料（如段落的文字內容）轉換為 JSON 字串並附加至 `blocksInformation` 欄位；針對圖片檔案，則動態生成 `image_${block.id}` 的鍵值附加至 FormData 中，確保後端能精準對應每一段落的圖片。
 
-| 路徑 | 元件 | 說明 |
-|---|---|---|
-| `/list` | `ListNews` | 顯示新聞列表，支援翻頁與跳頁 |
-| `/login` | `LoginWriter` | 帳號密碼登入 |
-| `/register` | `RegisterWriter` | 建立新帳號 |
-| `/write` | `WriteNews` | 撰寫並發布新新聞 |
-| `/update/:newsid` | `UpdateNews` | 依 ID 更新或刪除指定新聞 |
+### 2. 舊有圖片資源的 Blob 轉換與回填機制 (UpdateNews)
+這是本專案在實作編輯功能時的一大亮點。為了讓「更新」與「新增」共用相同的 FormData 上傳邏輯，當使用者進入修改頁面時，系統會執行以下流程：
+1. 透過 API 獲取文章的 Metadata 與舊有圖片路徑 (`cover_image_path` 與 `content_image_path`)。
+2. 針對每一張圖片，前端主動發起 Fetch 請求至 `/images/...`。
+3. 取得 Response 後，將其轉換為 `Blob` 格式。
+4. 透過 `new File([blob], filename, { type: blob.type })` 將 Blob 封裝回 File 物件。
+5. 將這些重構的 File 物件設定回 React 狀態中。如此一來，即使使用者沒有更換圖片，表單送出時依然會攜帶完整的圖片實體檔案，完美對接後端的覆寫邏輯。
 
----
+### 3. jQuery 特效的生命週期管理 (Login / Register)
+登入與註冊頁面使用了基於 jQuery 的 `jquery.ripples` 特效。為避免在 React SPA 架構中引發記憶體洩漏 (Memory Leak)，專案在 `useEffect` 中嚴格控管了特效的生命週期：
+* **掛載時**：透過 `useRef` 取得背景 DOM 節點，並呼叫 `jQuery(backgroundRef.current).ripples({...})` 初始化特效。
+* **卸載時**：在 `useEffect` 的清理函數 (Cleanup Function) 中，確實呼叫 `jQuery(backgroundRef.current).ripples('destroy')` 銷毀特效實體，確保切換路由時釋放記憶體。
 
-## 頁面說明
+### 4. 路由與微服務適配
+* Vite 的 `base` 被設定為 `/writer/`。
+* `main.jsx` 中的 `BrowserRouter` 設定了 `basename="/writer"`。
+這確保了前端編譯後的資源路徑與路由切換，皆能與反向代理伺服器 (Reverse Proxy) 的路由分發規則完美契合。
 
-### ListNews — 新聞列表
+## 目錄結構與模組解析
 
-- 透過 `GET /api/writer/listnews/?page_number={n}` 取得新聞清單
-- 顯示封面圖片、標題、分類標籤與建立時間
-- 支援「上一頁 / 下一頁」按鈕，以及直接跳轉至指定頁碼（輸入數字後按 Enter）
+### 頁面元件 (src/page/)
+* `LoginWriter.jsx` / `RegisterWriter.jsx`：處理作者的身份驗證，包含密碼顯示/隱藏切換機制與水波紋背景。API 請求採用 `application/json` 格式傳遞帳號密碼。
+* `ListNews.jsx`：作者專屬的新聞管理列表。實作了精確的受控表單分頁機制 (Pagination)，包含「上一頁/下一頁」按鈕以及輸入特定頁碼跳轉 (`pageNumberInputValue`) 的功能。
+* `WriteNews.jsx`：全新新聞的撰寫頁面，負責調度 `MainTitleEditor` 與 `ContentEditor`，並處理最終的 `POST` 發布邏輯。
+* `UpdateNews.jsx`：既有新聞的編輯與刪除頁面。負責在初始化時載入遠端資料與圖片 Blob，並處理 `PATCH` 更新與 `DELETE` 刪除邏輯。
 
-### LoginWriter — 登入
+### 共用 UI 元件 (src/component/)
+* `MainTitleEditor.jsx`：專責處理文章標題、分類選單與封面圖片上傳的受控元件。
+* `ContentEditor.jsx`：專責處理單一段落的文字輸入與附圖上傳的受控元件。
 
-- 輸入帳號與密碼後，呼叫 `POST /api/authentication/login`
-- 登入成功跳轉至 `/write`，失敗顯示錯誤提示
-- 頁面背景套用 jQuery Ripples 水波紋特效
-- 帳號與密碼欄位皆有「顯示 / 隱藏」切換按鈕（猴子圖示）
+## API 依賴規範
 
-### RegisterWriter — 註冊
+本前端專案強烈依賴後端提供以下 API 端點與跨域設定（需處理 HttpOnly Cookie 狀態）：
 
-- 與登入頁介面相同，呼叫 `POST /api/authentication/register`
-- 註冊成功跳轉至 `/login`
-- 同樣支援水波紋背景與眼睛切換按鈕
+1. 身份驗證 API (傳遞 JSON)
+   * `POST /api/authentication/login`
+   * `POST /api/authentication/register`
+2. 內容管理 API (需要驗證狀態)
+   * `GET /api/writer/listnews/?page_number={page}`：獲取作者歷史文章。
+   * `GET /api/writer/newscontent/{newsid}`：獲取特定文章詳細內容。
+   * `DELETE /api/writer/delete/news/{newsid}`：刪除特定文章。
+3. 內容發布與更新 API (傳遞 Multipart/form-data)
+   * `POST /api/writer/write`：發布新文章。
+   * `PATCH /api/writer/update/news/{newsid}`：覆寫舊文章。
+4. 靜態圖片服務
+   * `GET /images/{image_path}`：供編輯頁面讀取舊圖片並轉換為 Blob 使用。
 
-### WriteNews — 撰寫新聞
+## 開發與啟動指南
 
-- 包含一個 `MainTitleEditor`（主標題 + 封面圖片 + 分類）
-- 可動態新增 / 刪除 `ContentEditor` 段落區塊
-- 發布時將所有資料以 `FormData` 送出至 `POST /api/writer/write`
+### 1. 環境要求
+請確保開發環境具備 Node.js (建議 v18+) 與 npm。
 
-### UpdateNews — 更新新聞
-
-- 進入頁面時自動從 `GET /api/writer/newscontent/:newsid` 載入現有資料
-- 封面圖片與段落圖片會從伺服器下載並轉為 `File` 物件，以便重新上傳
-- 可修改標題、封面、分類與各段落內容，送出至 `PATCH /api/writer/update/news/:newsid`
-- 提供刪除新聞功能，呼叫 `DELETE /api/writer/delete/news/:newsid`
-
----
-
-## 元件說明
-
-### MainTitleEditor
-
-主標題區塊編輯器，Props 如下：
-
-| Prop | 型別 | 說明 |
-|---|---|---|
-| `onContentChange` | `(html: string) => void` | 標題內容變更回調 |
-| `onImageFileChange` | `(file: File \| null) => void` | 封面圖片變更回調 |
-| `onCategoryChange` | `(value: string) => void` | 分類標籤變更回調（`"1"` 政治 / `"2"` 體育 / `"3"` 財經）|
-| `initialSetting` | `{ content, category, imageFile }` | 初始值（用於更新頁面的資料預填）|
-
-### ContentEditor
-
-段落內容編輯器，Props 如下：
-
-| Prop | 型別 | 說明 |
-|---|---|---|
-| `onContentChange` | `(html: string) => void` | 段落內容變更回調 |
-| `onImageFileChange` | `(file: File \| null) => void` | 段落圖片變更回調 |
-| `initialSetting` | `{ content, imageFile }` | 初始值（用於更新頁面的資料預填）|
-
-兩個編輯器皆基於 **Quill** 富文本編輯器，提供以下功能：
-
-- 字體大小選擇（10px ～ 128px），並支援手動輸入任意 px 值
-- 粗體、斜體、底線、刪除線
-- 文字顏色與背景顏色
-- 清除格式
-- 圖片預覽與刪除
-
----
-
-## API 對應整理
-
-| 方法 | 路徑 | 用途 |
-|---|---|---|
-| `POST` | `/api/authentication/login` | 登入 |
-| `POST` | `/api/authentication/register` | 註冊 |
-| `GET` | `/api/writer/listnews/` | 取得新聞列表（分頁） |
-| `GET` | `/api/writer/newscontent/:newsid` | 取得單篇新聞內容 |
-| `POST` | `/api/writer/write` | 發布新新聞 |
-| `PATCH` | `/api/writer/update/news/:newsid` | 更新指定新聞 |
-| `DELETE` | `/api/writer/delete/news/:newsid` | 刪除指定新聞 |
-
----
-
-## 主要技術依賴
-
-| 套件 | 用途 |
-|---|---|
-| React + React Router | 頁面框架與路由管理 |
-| Quill | 富文本編輯器 |
-| jQuery + jquery.ripples | 登入 / 註冊頁背景水波紋特效 |
-| CSS Modules | 元件樣式隔離 |
+### 2. 安裝相依套件
+在 writer-frontend 目錄下執行：
+```bash
+npm install
